@@ -534,18 +534,18 @@ ACTSTREAM_SETTINGS = {
 ACCOUNT_OPEN_SIGNUP = True
 
 ACCOUNT_EMAIL_CONFIRMATION_EMAIL = strtobool(
-    os.getenv('ACCOUNT_EMAIL_CONFIRMATION_EMAIL', 'False')
+    os.getenv('ACCOUNT_EMAIL_CONFIRMATION_EMAIL', 'True')
 )
 ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = strtobool(
-    os.getenv('ACCOUNT_EMAIL_CONFIRMATION_REQUIRED', 'False')
+    os.getenv('ACCOUNT_EMAIL_CONFIRMATION_REQUIRED', 'True')
 )
 ACCOUNT_APPROVAL_REQUIRED = strtobool(
-    os.getenv('ACCOUNT_APPROVAL_REQUIRED', 'False')
+    os.getenv('ACCOUNT_APPROVAL_REQUIRED', 'True')
 )
 
 # Email for users to contact admins.
 THEME_ACCOUNT_CONTACT_EMAIL = os.getenv(
-    'THEME_ACCOUNT_CONTACT_EMAIL', 'admin@example.com'
+    'THEME_ACCOUNT_CONTACT_EMAIL', 'esmoyon@gmail.com'
 )
 
 #

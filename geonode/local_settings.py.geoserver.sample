@@ -1,426 +1,187 @@
 # -*- coding: utf-8 -*-
-#########################################################################
-#
-# Copyright (C) 2016 OSGeo
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program. If not, see <http://www.gnu.org/licenses/>.
-#
-#########################################################################
-
+import ldap
 import os
-from kombu import Queue
-from geonode.settings import *
+import geonode
+from django_auth_ldap.config import LDAPSearch, GroupOfNamesType
+AUTH_LDAP_SERVER_URI = "ldap://202.78.89.115"
+# Setting debug to true makes Django serve static media and
+# present pretty error pages.
+#DEBUG = TEMPLATE_DEBUG = True
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+# Set to True to load non-minified versions of (static) client dependencies
+# Requires to set-up Node and tools that are required for static development 
+# otherwise it will raise errors for the missing non-minified dependencies
+#DEBUG_STATIC = True
 
-MEDIA_ROOT = os.getenv('MEDIA_ROOT', os.path.join(PROJECT_ROOT, "uploaded"))
+SITENAME = 'GeoNode'
+SITEURL = 'http://10.0.0.251/'
 
-STATIC_ROOT = os.getenv('STATIC_ROOT',
-                        os.path.join(PROJECT_ROOT, "static_root")
-                        )
-
-# SECRET_KEY = '************************'
-
-SITEURL = "http://localhost:8000"
-
-ALLOWED_HOSTS = ['localhost', 'geonode.example.com']
-
-# TIME_ZONE = 'Europe/Paris'
+DATABASE_ENGINE = 'postgresql_psycopg2'
+DATABASE_NAME = 'geonode'
+DATABASE_USER = 'geonode'
+DATABASE_PASSWORD = 'iPstAxMv'
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
 
 DATABASES = {
     'default': {
-         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-         'NAME': 'geonode',
-         'USER': 'geonode',
-         'PASSWORD': 'geonode',
-     },
-    # vector datastore for uploads
-    'datastore' : {
-        #'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'ENGINE': '', # Empty ENGINE name disables
-        'NAME': 'geonode',
-        'USER' : 'geonode',
-        'PASSWORD' : 'geonode',
-        'HOST' : 'localhost',
-        'PORT' : '5432',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': DATABASE_NAME,
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PASSWORD,
+        'HOST': DATABASE_HOST,
+        'PORT': DATABASE_PORT,
+    },
+    'datastore': {
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'geonode_data',
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PASSWORD,
+        'HOST': DATABASE_HOST,
+        'PORT': DATABASE_PORT,
     }
 }
 
-GEOSERVER_LOCATION = os.getenv(
-    'GEOSERVER_LOCATION', 'http://localhost:8080/geoserver/'
-)
-
-GEOSERVER_PUBLIC_LOCATION = os.getenv(
-#    'GEOSERVER_PUBLIC_LOCATION', '{}/geoserver/'.format(SITEURL)
-    'GEOSERVER_LOCATION', 'http://localhost:8080/geoserver/'
-)
-
-OGC_SERVER_DEFAULT_USER = os.getenv(
-    'GEOSERVER_ADMIN_USER', 'admin'
-)
-
-OGC_SERVER_DEFAULT_PASSWORD = os.getenv(
-    'GEOSERVER_ADMIN_PASSWORD', 'geoserver'
-)
+GEOSERVER_URL = SITEURL + 'geoserver/'
 
 # OGC (WMS/WFS/WCS) Server Settings
 OGC_SERVER = {
-    'default': {
-        'BACKEND': 'geonode.geoserver',
-        'LOCATION': GEOSERVER_LOCATION,
-        'LOGIN_ENDPOINT': 'j_spring_oauth2_geonode_login',
-        'LOGOUT_ENDPOINT': 'j_spring_oauth2_geonode_logout',
-        # PUBLIC_LOCATION needs to be kept like this because in dev mode
-        # the proxy won't work and the integration tests will fail
-        # the entire block has to be overridden in the local_settings
-        'PUBLIC_LOCATION': GEOSERVER_PUBLIC_LOCATION,
-        'USER' : OGC_SERVER_DEFAULT_USER,
-        'PASSWORD' : OGC_SERVER_DEFAULT_PASSWORD,
+    'default' : {
+        'BACKEND' : 'geonode.geoserver',
+        'LOCATION' : 'http://localhost:8080/geoserver/',
+        'PUBLIC_LOCATION' : GEOSERVER_URL,
+        'USER' : 'admin',
+        'PASSWORD' : 'geoserver',
         'MAPFISH_PRINT_ENABLED' : True,
         'PRINT_NG_ENABLED' : True,
         'GEONODE_SECURITY_ENABLED' : True,
         'GEOGIG_ENABLED' : False,
         'WMST_ENABLED' : False,
         'BACKEND_WRITE_ENABLED': True,
-        'WPS_ENABLED' : False,
-        'LOG_FILE': '%s/geoserver/data/logs/geoserver.log' % os.path.abspath(os.path.join(PROJECT_ROOT, os.pardir)),
-        # Set to dictionary identifier of database containing spatial data in DATABASES dictionary to enable
-        'DATASTORE': '', #'datastore',
+        'WPS_ENABLED' : True,
+        'LOG_FILE':'/usr/share/geoserver/data/logs/geoserver.log',
+        # Set to name of database in DATABASES dictionary to enable
+        'DATASTORE': 'datastore',
+        'LOGIN_ENDPOINT': 'j_spring_oauth2_geonode_login',
+        'LOGOUT_ENDPOINT': 'j_spring_oauth2_geonode_logout',
     }
 }
 
-# If you want to enable Mosaics use the following configuration
-#UPLOADER = {
-##    'BACKEND': 'geonode.rest',
-#    'BACKEND': 'geonode.importer',
-#    'OPTIONS': {
-#        'TIME_ENABLED': True,
-#        'MOSAIC_ENABLED': True,
-#        'GEOGIG_ENABLED': False,
-#    }
-#}
+LANGUAGE_CODE = 'en'
+
+MEDIA_ROOT = '/var/www/geonode/uploaded'
+STATIC_ROOT = '/var/www/geonode/static/'
+
+# secret key used in hashing, should be a long, unique string for each
+# site.  See http://docs.djangoproject.com/en/1.2/ref/settings/#secret-key
+SECRET_KEY = '92UDqgQHzBOtjSU8HQ'
 
 
 CATALOGUE = {
     'default': {
-        # The underlying CSW implementation
-        # default is pycsw in local mode (tied directly to GeoNode Django DB)
+        # The underlying CSW backend
+        # ("pycsw_http", "pycsw_local", "geonetwork", "deegree")
         'ENGINE': 'geonode.catalogue.backends.pycsw_local',
-        # pycsw in non-local mode
-        # 'ENGINE': 'geonode.catalogue.backends.pycsw_http',
-        # GeoNetwork opensource
-        # 'ENGINE': 'geonode.catalogue.backends.geonetwork',
-        # deegree and others
-        # 'ENGINE': 'geonode.catalogue.backends.generic',
-
         # The FULLY QUALIFIED base url to the CSW instance for this GeoNode
-        'URL': '%s/catalogue/csw' % SITEURL,
-        # 'URL': 'http://localhost:8080/geonetwork/srv/en/csw',
-        # 'URL': 'http://localhost:8080/deegree-csw-demo-3.0.4/services',
-
-        # login credentials (for GeoNetwork)
-        'USER': 'admin',
-        'PASSWORD': 'admin',
+        'URL': '%scatalogue/csw' % SITEURL,
     }
 }
 
+# A Google Maps API key is needed for the 3D Google Earth view of maps
+# See http://code.google.com/apis/maps/signup.html
+GOOGLE_API_KEY = ''
 
-# Default preview library
-LAYER_PREVIEW_LIBRARY = 'geoext'
-#LAYER_PREVIEW_LIBRARY = 'leaflet'
-#LEAFLET_CONFIG = {
-#    'TILES': [
-#        # Find tiles at:
-#        # http://leaflet-extras.github.io/leaflet-providers/preview/
-#
-#        # Map Quest
-#        ('Map Quest',
-#         'http://otile4.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
-#         'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> '
-#         '&mdash; Map data &copy; '
-#         '<a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'),
-#        # Stamen toner lite.
-#        # ('Watercolor',
-#        #  'http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.png',
-#        #  'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
-#        #  <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
-#        #  <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
-#        #  <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
-#        # ('Toner Lite',
-#        #  'http://{s}.tile.stamen.com/toner-lite/{z}/{x}/{y}.png',
-#        #  'Map tiles by <a href="http://stamen.com">Stamen Design</a>, \
-#        #  <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; \
-#        #  <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, \
-#        #  <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'),
-#    ],
-#    'PLUGINS': {
-#        'esri-leaflet': {
-#            'js': 'lib/js/esri-leaflet.js',
-#            'auto-include': True,
-#        },
-#        'leaflet-fullscreen': {
-#            'css': 'lib/css/leaflet.fullscreen.css',
-#            'js': 'lib/js/Leaflet.fullscreen.min.js',
-#            'auto-include': True,
-#        },
-#    },
-#    'SRID': 3857,
-#    'RESET_VIEW': False
+GEONODE_ROOT = os.path.dirname(geonode.__file__)
+
+TEMPLATE_DIRS = (
+    '/etc/geonode/templates',
+    os.path.join(GEONODE_ROOT, 'templates'),
+)
+
+# Additional directories which hold static files
+STATICFILES_DIRS = [
+    '/etc/geonode/media',
+    os.path.join(GEONODE_ROOT, 'static'),
+]
+
+#REGISTRATION_OPEN = False
+#ACCOUNT_APPROVAL_REQUIRED = False
+
+#ACCOUNT_EMAIL_CONFIRMATION_EMAIL = False
+#ACCOUNT_EMAIL_CONFIRMATION_REQUIRED = False
+
+# Allowed values for the preview library are 'geoext' and 'leaflet'.
+#LAYER_PREVIEW_LIBRARY = 'geoext'
+
+# Uncomment the following to receive emails whenever there are errors in GeoNode
+# or to be notified of new user requests when ACCOUNT_APPROVAL_REQUIRED has been set.
+#ADMINS = (
+#            ('John', 'john@example.com'), 
+#         )
+
+# Uncomment the following to use a Gmail account as the email backend
+#EMAIL_USE_TLS = True
+#EMAIL_HOST = 'smtp.gmail.com'
+#EMAIL_HOST_USER = 'youremail@gmail.com'
+#EMAIL_HOST_PASSWORD = 'yourpassword'
+#EMAIL_PORT = 587
+
+# For more information on available settings please consult the Django docs at
+# https://docs.djangoproject.com/en/dev/ref/settings
+ALLOWED_HOSTS= [ 'localhost', '10.0.0.28', '10.0.0.251',  ]
+SILENCED_SYSTEM_CHECKS = ['1_8.W001', 'fields.W340']
+
+AUTH_LDAP_BIND_DN = "cn=Manager,dc=carsu,dc=edu,dc=ph"
+AUTH_LDAP_BIND_PASSWORD = "carsu@1946"
+AUTH_LDAP_USER_SEARCH = LDAPSearch("ou=Employees,ou=Users,dc=carsu,dc=edu,dc=ph",ldap.SCOPE_SUBTREE, "(uid=%(user)s)")
+# or perhaps:
+# AUTH_LDAP_USER_DN_TEMPLATE = "uid=%(user)s,ou=users,dc=example,dc=com"
+
+# Set up the basic group parameters.
+AUTH_LDAP_GROUP_SEARCH = LDAPSearch("ou=Employees,ou=Users,dc=carsu,dc=edu,dc=ph",
+    ldap.SCOPE_SUBTREE, "(objectClass=groupOfNames)"
+)
+AUTH_LDAP_GROUP_TYPE = GroupOfNamesType(name_attr="cn")
+
+# Simple group restrictions
+#AUTH_LDAP_REQUIRE_GROUP = "cn=enabled,ou=django,ou=groups,dc=example,dc=com"
+#AUTH_LDAP_DENY_GROUP = "cn=disabled,ou=django,ou=groups,dc=example,dc=com"
+
+# Populate the Django user from the LDAP directory.
+AUTH_LDAP_USER_ATTR_MAP = {
+    "first_name": "givenName",
+    "last_name": "sn",
+    "email": "mail"
+}
+
+AUTH_LDAP_PROFILE_ATTR_MAP = {
+    "employee_number": "employeeNumber"
+}
+
+#AUTH_LDAP_USER_FLAGS_BY_GROUP = {
+#    "is_active": "cn=Manager,ou=django,ou=groups,dc=example,dc=com",
+#    "is_staff": "cn=Manager,ou=django,ou=groups,dc=example,dc=com",
+#    "is_superuser": "cn=superuser,ou=django,ou=groups,dc=example,dc=com"
 #}
 
-GEONODE_APPS = (
-    # GeoNode internal apps
-    'geonode.people',
-    'geonode.base',
-    'geonode.layers',
-    'geonode.maps',
-    'geonode.proxy',
-    'geonode.security',
-    'geonode.social',
-    'geonode.catalogue',
-    'geonode.documents',
-    'geonode.api',
-    'geonode.groups',
-    'geonode.services',
+#AUTH_LDAP_PROFILE_FLAGS_BY_GROUP = {
+#    "is_awesome": "cn=awesome,ou=django,ou=groups,dc=example,dc=com",
+#}
 
-    # QGIS Server Apps
-    # 'geonode_qgis_server',
+# This is the default, but I like to be explicit.
+AUTH_LDAP_ALWAYS_UPDATE_USER = True
 
-    # GeoServer Apps
-    # Geoserver needs to come last because
-    # it's signals may rely on other apps' signals.
-    'geonode.geoserver',
-    'geonode.upload',
-    'geonode.tasks',
+# Use LDAP group membership to calculate group permissions.
+AUTH_LDAP_FIND_GROUP_PERMS = True
 
-)
+# Cache group memberships for an hour to minimize LDAP traffic
+AUTH_LDAP_CACHE_GROUPS = True
+AUTH_LDAP_GROUP_CACHE_TIMEOUT = 3600
 
-GEONODE_CONTRIB_APPS = (
-    # GeoNode Contrib Apps
-    # 'geonode.contrib.dynamic',
-    # 'geonode.contrib.exif',
-    # 'geonode.contrib.favorite',
-    # 'geonode.contrib.geogig',
-    # 'geonode.contrib.geosites',
-    # 'geonode.contrib.nlp',
-    # 'geonode.contrib.slack',
-    'geonode.contrib.metadataxsl',
-)
 
-GEONODE_APPS = GEONODE_APPS + GEONODE_CONTRIB_APPS
-
-INSTALLED_APPS = (
-
-    'modeltranslation',
-
-    # Boostrap admin theme
-    # 'django_admin_bootstrapped.bootstrap3',
-    # 'django_admin_bootstrapped',
-
-    # Apps bundled with Django
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.admin',
-    'django.contrib.sitemaps',
-    'django.contrib.staticfiles',
-    'django.contrib.messages',
-    'django.contrib.humanize',
-    'django.contrib.gis',
-
-    # Third party apps
-
-    # Utility
-    'pagination',
-    'taggit',
-    'treebeard',
-    'friendlytagloader',
-    'geoexplorer',
-    'leaflet',
-    'django_extensions',
-    #'geonode-client',
-    # 'haystack',
-    'autocomplete_light',
-    'mptt',
-    # 'modeltranslation',
-    # 'djkombu',
-    'djcelery',
-    'kombu.transport.django',
-
-    'storages',
-    'floppyforms',
-
-    # Theme
-    "pinax_theme_bootstrap",
-    'django_forms_bootstrap',
-
-    # Social
-    'account',
-    'avatar',
-    'dialogos',
-    'agon_ratings',
-    'announcements',
-    'actstream',
-    'user_messages',
-    'tastypie',
-    'polymorphic',
-    'guardian',
-    'oauth2_provider',
-) + GEONODE_APPS
-
-# default map projection
-# Note: If set to EPSG:4326, then only EPSG:4326 basemaps will work.
-DEFAULT_MAP_CRS = "EPSG:900913"
-
-# Where should newly created maps be focused?
-DEFAULT_MAP_CENTER = (0, 0)
-
-# How tightly zoomed should newly created maps be?
-# 0 = entire world;
-# maximum zoom is between 12 and 15 (for Google Maps, coverage varies by area)
-DEFAULT_MAP_ZOOM = 0
-
-ALT_OSM_BASEMAPS = os.environ.get('ALT_OSM_BASEMAPS', False)
-CARTODB_BASEMAPS = os.environ.get('CARTODB_BASEMAPS', False)
-STAMEN_BASEMAPS = os.environ.get('STAMEN_BASEMAPS', False)
-THUNDERFOREST_BASEMAPS = os.environ.get('THUNDERFOREST_BASEMAPS', False)
-MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', None)
-BING_API_KEY = os.environ.get('BING_API_KEY', None)
-
-MAP_BASELAYERS = [{
-    "source": {"ptype": "gxp_olsource"},
-    "type": "OpenLayers.Layer",
-    "args": ["No background"],
-    "name": "background",
-    "visibility": False,
-    "fixed": True,
-    "group":"background"
-},
-# {
-#     "source": {"ptype": "gxp_olsource"},
-#     "type": "OpenLayers.Layer.XYZ",
-#     "title": "TEST TILE",
-#     "args": ["TEST_TILE", "http://test_tiles/tiles/${z}/${x}/${y}.png"],
-#     "name": "background",
-#     "attribution": "&copy; TEST TILE",
-#     "visibility": False,
-#     "fixed": True,
-#     "group":"background"
-# },
-{
-    "source": {"ptype": "gxp_osmsource"},
-    "type": "OpenLayers.Layer.OSM",
-    "name": "mapnik",
-    "visibility": True,
-    "fixed": True,
-    "group": "background"
-}]
-
-if 'geonode.geoserver' in INSTALLED_APPS:
-    LOCAL_GEOSERVER = {
-        "source": {
-            "ptype": "gxp_wmscsource",
-            "url": OGC_SERVER['default']['PUBLIC_LOCATION'] + "wms",
-            "restUrl": "/gs/rest"
-        }
-    }
-    baselayers = MAP_BASELAYERS
-    MAP_BASELAYERS = [LOCAL_GEOSERVER]
-    MAP_BASELAYERS.extend(baselayers)
-
-# Use kombu broker by default
-# REDIS_URL = 'redis://localhost:6379/1'
-# BROKER_URL = REDIS_URL
-# CELERY_RESULT_BACKEND = REDIS_URL
-CELERYD_HIJACK_ROOT_LOGGER = True
-CELERYD_CONCURENCY = 1
-# Set this to False to run real async tasks
-CELERY_ALWAYS_EAGER = True
-CELERYD_LOG_FILE = None
-CELERY_REDIRECT_STDOUTS = True
-CELERYD_LOG_LEVEL = 1
-
-# Haystack Search Backend Configuration. To enable,
-# first install the following:
-# - pip install django-haystack
-# - pip install elasticsearch==2.4.0
-# - pip install woosh
-# - pip install pyelasticsearch
-# Set HAYSTACK_SEARCH to True
-# Run "python manage.py rebuild_index"
-# HAYSTACK_SEARCH = False
-# Avoid permissions prefiltering
-SKIP_PERMS_FILTER = False
-# Update facet counts from Haystack
-HAYSTACK_FACET_COUNTS = True
-HAYSTACK_CONNECTIONS = {
-   'default': {
-       'ENGINE': 'haystack.backends.elasticsearch2_backend.Elasticsearch2SearchEngine',
-       'URL': 'http://127.0.0.1:9200/',
-       'INDEX_NAME': 'haystack',
-       },
-#    'db': {
-#        'ENGINE': 'haystack.backends.simple_backend.SimpleEngine',
-#        'EXCLUDED_INDEXES': ['thirdpartyapp.search_indexes.BarIndex'],
-#        }
-   }
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-# HAYSTACK_SEARCH_RESULTS_PER_PAGE = 20
-
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d '
-                      '%(thread)d %(message)s'
-        },
-        'simple': {
-            'format': '%(message)s',
-        },
-    },
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse'
-        }
-    },
-    'handlers': {
-        'null': {
-            'level': 'ERROR',
-            'class': 'django.utils.log.NullHandler',
-        },
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
-        },
-        'mail_admins': {
-            'level': 'ERROR', 'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler',
-        }
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console"], "level": "ERROR", },
-        "geonode": {
-            "handlers": ["console"], "level": "DEBUG", },
-        "gsconfig.catalog": {
-            "handlers": ["console"], "level": "DEBUG", },
-        "owslib": {
-            "handlers": ["console"], "level": "DEBUG", },
-        "pycsw": {
-            "handlers": ["console"], "level": "ERROR", },
-        },
-    }
+# Keep ModelBackend around for per-user permissions and maybe a local
+# superuser.
+AUTHENTICATION_BACKENDS = (
+                           'django_auth_ldap.backend.LDAPBackend',
+                           'django.contrib.auth.backends.ModelBackend',
+                           'guardian.backends.ObjectPermissionBackend',)

@@ -116,7 +116,10 @@ USE_L10N = strtobool(os.getenv('USE_I18N', 'True'))
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', "en")
-
+THEME_ACCOUNT_CONTACT_EMAIL = 'gsmmindsetthemes@gmail.com'
+LIPAD_SUPPORT_MAIL = 'gsmindset@gmail.com'
+FTP_SUPPORT_MAIL = 'ftpmindset@gmail.com'
+FTP_AUTOMAIL = 'automailer@gmail.com'
 
 _DEFAULT_LANGUAGES = (
     ('en', 'English'),
@@ -317,7 +320,9 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.humanize',
     'django.contrib.gis',
-
+    'geonode.datarequests',
+    'geonode.eula',
+   # 'geonode.cephgeo',
     # Third party apps
 
     # Utility
@@ -327,6 +332,7 @@ INSTALLED_APPS = (
     'friendlytagloader',
     'geoexplorer',
     'leaflet',
+    'crispy_forms',
     'django_extensions',
     #'geonode-client',
     # 'haystack',
@@ -336,13 +342,15 @@ INSTALLED_APPS = (
     # 'djkombu',
     'djcelery',
     'kombu.transport.django',
-
+    #'corsheaders',
     'storages',
     'floppyforms',
 
     # Theme
     "pinax_theme_bootstrap",
     'django_forms_bootstrap',
+    'corsheaders',
+    'captcha',
 
     # Social
     'account',
@@ -588,11 +596,11 @@ MISSING_THUMBNAIL = os.getenv(
 CACHE_TIME = int(os.getenv('CACHE_TIME', '0'))
 
 GEOSERVER_LOCATION = os.getenv(
-    'GEOSERVER_LOCATION', 'http://localhost:8080/geoserver/'
+    'GEOSERVER_LOCATION', 'http://10.0.0.16:8080/geoserver/'
 )
 
 GEOSERVER_PUBLIC_LOCATION = os.getenv(
-    'GEOSERVER_PUBLIC_LOCATION', 'http://localhost:8080/geoserver/'
+    'GEOSERVER_PUBLIC_LOCATION', 'http://10.0.0.16:8080/geoserver/'
 )
 
 OGC_SERVER_DEFAULT_USER = os.getenv(

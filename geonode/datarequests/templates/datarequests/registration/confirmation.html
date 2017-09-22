@@ -1,0 +1,64 @@
+{% extends "upload/layer_upload_base.html" %}
+{% load bootstrap_tags %}
+{% load crispy_forms_tags %}
+{% load i18n %}
+{% load staticfiles %}
+
+{% block title %} {% trans "Registration Confirmation"  %} - {{ block.super }}  {% endblock %}
+
+{% block body_class %}{% endblock %}
+
+
+{% block head %}
+
+{{ block.super }}
+{% endblock %}
+
+{% block body_outer %}
+<div class="page-header">
+  <h2 class="page-title">{% trans "Request Data" %}</h2>
+</div>
+
+{% if not user.is_authenticated %}
+
+    <p>{% blocktrans %}Your registration details have been received. We have sent you an email for verification. Follow the link provided in the email to finalize the signup process.{% endblocktrans %}</p>
+
+    <p>{% blocktrans %}Didn't receive your email? Please check your spam folder. Still not there? Contact us at <strong>{{ support_email }}</strong>, and we'll be glad to assist you.{% endblocktrans %}</p>
+
+
+{% endif %}
+
+
+{% endblock %}
+
+
+{% block extra_script %}
+
+<script data-main="{% static 'geonode/js/datarequests/upload/main' %}"
+  src="{% static 'lib/js/require.js' %}">
+</script>
+
+<script type="text/javascript">
+{% autoescape off %}
+
+  csrf_token =  "{{ csrf_token }}",
+  form_target = "{% url 'datarequests:data_request_form' %}",
+  geogig_enabled = {{ GEOGIG_ENABLED|lower  }},
+  time_enabled = {{ TIME_ENABLED|lower  }},
+  userLookup = "{% url "geonode.views.ajax_lookup" %}"
+
+  $('#file-uploader').find('#errors').hide()
+
+{% endautoescape %}
+
+$('#upload-button').click(function(){
+  $('#please-wait').modal({
+      backdrop: 'static',
+      keyboard: false
+  });
+});
+// $('#modal-content').on('shown.bs.modal', function () {//when upload modal shows
+//   $('#please-wait').modal('hide');//to hide please wait modal
+// })
+</script>
+{% endblock extra_script %}

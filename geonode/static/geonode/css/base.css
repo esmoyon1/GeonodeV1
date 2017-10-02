@@ -4264,7 +4264,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
   text-decoration: none;
 }
 .navbar-brand > img {
-  display: block;
+  display: inline-block;
 }
 @media (min-width: 768px) {
   .navbar > .container .navbar-brand,
@@ -6883,11 +6883,11 @@ article.tab-pane {
   margin-left: 10px;
 }
 .navbar-brand {
-  background: url(../img/shiep2.png) 0 10px no-repeat;
+  background: url(../img/Brand_wLogo.png) 0 10px no-repeat;
   background-size: 100%;
   text-indent: -9999px;
   height: 65px;
-  width: 450px;
+  width: 345px;
 }
 .navbar-collapse {
   max-height: none;
